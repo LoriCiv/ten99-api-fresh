@@ -1,0 +1,46 @@
+import admin from 'firebase-admin';
+
+// --- Initialize Firebase Admin ---
+if (!admin.apps.length) {
+  const serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString('utf-8'));
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+}
+const firestore = admin.firestore();
+// --- End of Firebase Init ---
+
+export default async function handler(request, response) {
+  // Set CORS headers
+  response.setHeader('Access-Control-Allow-Origin', '*');
+  response.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (request.method === 'OPTIONS') {
+    return response.status(200).end();
+  }
+
+  // We only want to handle GET requests for this endpoint
+  if (request.method === 'GET') {
+    try {
+      const snapshot = await firestore.collection('pendingAppointments').orderBy('createdAt', 'desc').get();
+
+      if (snapshot.empty) {
+        return response.status(200).json([]);
+      }
+
+      const appointments = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      return response.status(200).json(appointments);
+
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      return response.status(500).json({ error: "Internal server error." });
+    }
+  } else {
+    return response.status(405).json({ error: "Method Not Allowed" });
+  }
+}
