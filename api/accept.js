@@ -34,7 +34,7 @@ export default async function handler(request, response) {
       return response.status(400).json({ error: 'Appointment ID is required.' });
     }
 
-    // This now correctly points to the 'pendingAppointments' collection
+    // Correctly point to the 'pendingAppointments' collection
     const appointmentRef = db.collection('pendingAppointments').doc(id);
     await appointmentRef.update({ status: 'confirmed' });
 
