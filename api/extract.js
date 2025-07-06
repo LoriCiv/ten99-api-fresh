@@ -64,14 +64,15 @@ export default async function handler(request, response) {
 
         const result = await model.generateContent(prompt);
         const aiResponse = await result.response;
-
-        // Get the raw text from the AI response
         const rawText = aiResponse.text();
 
-        // Clean the text by removing the markdown code block
-        const cleanedText = rawText.replace(/^```json\s*|```$/g, "").trim();
-
-        const jsonResponse = JSON.parse(cleanedText);
+        // This new regex finds the JSON block and extracts it, ignoring anything else.
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            throw new Error("No valid JSON object found in AI response.");
+        }
+        const jsonString = jsonMatch[0];
+        const jsonResponse = JSON.parse(jsonString);
 
         const docRef = await db.collection('pendingAppointments').add({
             description: jsonResponse.description,
