@@ -16,6 +16,7 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 // --- End of Firebase Initialization ---
 
+
 // Initialize Google Generative AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
@@ -37,7 +38,7 @@ const parseMultipartForm = (req) => {
         busboy.on('error', err => {
             reject(err);
         });
-
+        
         if (req.body) {
             busboy.end(req.body);
         } else {
@@ -46,6 +47,7 @@ const parseMultipartForm = (req) => {
     });
 };
 
+
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
         return response.status(405).send('Method Not Allowed');
@@ -53,7 +55,7 @@ export default async function handler(request, response) {
 
     try {
         const formData = await parseMultipartForm(request);
-        const emailText = formData.text; 
+        const emailText = formData.email; // <-- THE ONLY CHANGE IS HERE
 
         if (!emailText) {
             console.error("Email text is missing from the form data.", formData);
@@ -61,12 +63,12 @@ export default async function handler(request, response) {
         }
 
         const prompt = `Extract the appointment details from this email body as a JSON object with keys "description" and "startTime". startTime should be a valid ISO 8601 string. Email Body: "${emailText}"`;
-
+        
         const result = await model.generateContent(prompt);
         const aiResponse = await result.response;
+        
         const rawText = aiResponse.text();
-
-        // This new regex finds the JSON block and extracts it, ignoring anything else.
+        
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
             throw new Error("No valid JSON object found in AI response.");
