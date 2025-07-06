@@ -3,8 +3,6 @@ import admin from 'firebase-admin';
 import Busboy from 'busboy';
 
 // --- Firebase Admin Initialization ---
-// This is the standard, safe way to initialize Firebase.
-// It checks if the app is already initialized before trying to create it.
 if (!admin.apps.length) {
   try {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
@@ -17,7 +15,6 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 // --- End of Firebase Initialization ---
-
 
 // Initialize Google Generative AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -40,7 +37,7 @@ const parseMultipartForm = (req) => {
         busboy.on('error', err => {
             reject(err);
         });
-        
+
         if (req.body) {
             busboy.end(req.body);
         } else {
@@ -48,7 +45,6 @@ const parseMultipartForm = (req) => {
         }
     });
 };
-
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
@@ -65,9 +61,17 @@ export default async function handler(request, response) {
         }
 
         const prompt = `Extract the appointment details from this email body as a JSON object with keys "description" and "startTime". startTime should be a valid ISO 8601 string. Email Body: "${emailText}"`;
+
         const result = await model.generateContent(prompt);
         const aiResponse = await result.response;
-        const jsonResponse = JSON.parse(aiResponse.text());
+
+        // Get the raw text from the AI response
+        const rawText = aiResponse.text();
+
+        // Clean the text by removing the markdown code block
+        const cleanedText = rawText.replace(/^```json\s*|```$/g, "").trim();
+
+        const jsonResponse = JSON.parse(cleanedText);
 
         const docRef = await db.collection('pendingAppointments').add({
             description: jsonResponse.description,
