@@ -1,6 +1,6 @@
 import admin from 'firebase-admin';
 
-// This is the most robust way to initialize Firebase Admin in Vercel
+// Safely initialize Firebase Admin
 if (!admin.apps.length) {
   try {
     const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
@@ -8,7 +8,6 @@ if (!admin.apps.length) {
       throw new Error('Firebase service account key is not set.');
     }
 
-    // Vercel sometimes passes the JSON as an object and sometimes as a string. This handles both.
     const serviceAccount = typeof serviceAccountString === 'string' 
       ? JSON.parse(serviceAccountString) 
       : serviceAccountString;
@@ -35,8 +34,8 @@ export default async function handler(request, response) {
       return response.status(400).json({ error: 'Appointment ID is required.' });
     }
 
-    // We now update the document in the 'appointments' collection
-    const appointmentRef = db.collection('appointments').doc(id);
+    // This now correctly points to the 'pendingAppointments' collection
+    const appointmentRef = db.collection('pendingAppointments').doc(id);
     await appointmentRef.update({ status: 'confirmed' });
 
     console.log(`Appointment ${id} status updated to confirmed.`);
