@@ -21,7 +21,7 @@ const db = admin.firestore();
 
 // Initialize Google Generative AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
 // Helper function to parse multipart form data
 const parseMultipartForm = (req) => {
