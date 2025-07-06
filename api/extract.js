@@ -1,20 +1,23 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { initializeApp, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import admin from 'firebase-admin';
 import Busboy from 'busboy';
 
-// Decode the Base64 service account key and parse it as JSON
-const encodedKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-const decodedKey = Buffer.from(encodedKey, 'base64').toString('utf-8');
-const serviceAccount = JSON.parse(decodedKey);
-
-// Initialize Firebase Admin if not already initialized
-if (!initializeApp) {
-    initializeApp({
-        credential: cert(serviceAccount)
+// --- Firebase Admin Initialization ---
+// This is the standard, safe way to initialize Firebase.
+// It checks if the app is already initialized before trying to create it.
+if (!admin.apps.length) {
+  try {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
     });
+  } catch (error) {
+    console.error('Firebase Admin Initialization Error:', error);
+  }
 }
-const db = getFirestore();
+const db = admin.firestore();
+// --- End of Firebase Initialization ---
+
 
 // Initialize Google Generative AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
